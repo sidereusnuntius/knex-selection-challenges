@@ -1,4 +1,4 @@
-use std::io::Read;
+use std::io::{self, Read};
 use std::{collections::HashMap, fs::File};
 
 use chrono::NaiveDate;
@@ -12,14 +12,17 @@ use crate::models::NovoDeputado;
 mod models;
 mod schema;
 
-pub fn process_csv(connection: &mut PgConnection, file: File) -> Result<(), Error>{
+pub fn process_csv<T>(connection: &mut PgConnection, reader: T) -> Result<(), Error>
+where
+    T: io::Read
+    {
     let mut cache: HashMap<String, i32> = HashMap::new();
     let mut rdr =
     csv::ReaderBuilder::new()
         .has_headers(true)
         .delimiter(b';')
         .double_quote(false)
-        .from_reader(file);
+        .from_reader(reader);
 
     let headers = rdr.headers().unwrap().clone();
 
@@ -56,7 +59,7 @@ pub fn process_csv(connection: &mut PgConnection, file: File) -> Result<(), Erro
             url_documento: expense.url_documento,
         });
         // println!("Insert: {:?}", expense);
-        if expenses.len() == 2000 {
+        if expenses.len() == 10000 {
             diesel::insert_into(schema::expenses::table)
             .values(&expenses)
             // .returning(Expense::as_returning())

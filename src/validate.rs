@@ -1,4 +1,4 @@
-fn valida_cpf(cpf: &str) -> bool {
+pub fn valida_cpf(cpf: &str) -> bool {
     if cpf.chars().filter(|c| c.is_numeric()).count() != cpf.len() { return false; }
     
     // Meio porco, mas funciona.
@@ -17,7 +17,7 @@ fn valida_cpf(cpf: &str) -> bool {
         .enumerate()
         .map(
             |(i, digit)| {
-                println!("{digit} * {}", 10-i);
+                // println!("{digit} * {}", 10-i);
                 digit * (10 - i as u16)}
         ).sum::<u16>();
 
@@ -26,23 +26,19 @@ fn valida_cpf(cpf: &str) -> bool {
         .enumerate()
         .map(
             |(i, digit)| {
-                println!("{digit} * {}", 11-i);
+                // println!("{digit} * {}", 11-i);
                 digit * (11 - i as u16)}
         ).sum::<u16>();
-    println!("{}\n{}\n{}\n{}\n{}\n{}",
-        valida_1o_digito,
-        valida_2o_digito,
-        ((valida_1o_digito * 10) % 11) % 10,
-        ((valida_2o_digito * 10) % 11) % 10,
-        cpf_digits.get(9).unwrap_or(&0),
-        cpf_digits.get(10).unwrap_or(&0) 
-    );
-    if ((valida_1o_digito * 10) % 11) % 10 != *cpf_digits.get(9).unwrap_or(&0) 
-        || ((valida_2o_digito * 10) % 11) % 10 != *cpf_digits.get(10).unwrap_or(&0) {
-        false
-    } else {
-        true
-    }
+    // println!("{}\n{}\n{}\n{}\n{}\n{}",
+    //     valida_1o_digito,
+    //     valida_2o_digito,
+    //     ((valida_1o_digito * 10) % 11) % 10,
+    //     ((valida_2o_digito * 10) % 11) % 10,
+    //     cpf_digits.get(9).unwrap_or(&0),
+    //     cpf_digits.get(10).unwrap_or(&0) 
+    // );
+    ((valida_1o_digito * 10) % 11) % 10 == *cpf_digits.get(9).unwrap_or(&0) 
+        && ((valida_2o_digito * 10) % 11) % 10 == *cpf_digits.get(10).unwrap_or(&0)
 }
 
 #[cfg(test)]

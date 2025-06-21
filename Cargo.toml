@@ -9,3 +9,4 @@ serde = { version = "1.0.219", features = ["derive"] }
 diesel = { version = "2.2.0", features = ["postgres", "chrono"] }
 dotenvy = "0.15"
 chrono = "0.4.41"
+anyhow = "1.0.98"

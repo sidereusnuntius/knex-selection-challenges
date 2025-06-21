@@ -1,0 +1,7 @@
+CREATE TABLE deputados (
+    id SERIAL PRIMARY KEY,
+    nome VARCHAR NOT NULL,
+    uf CHAR(2) NOT NULL,
+    cpf VARCHAR NOT NULL UNIQUE,
+    partido VARCHAR
+)

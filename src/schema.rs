@@ -14,7 +14,7 @@ diesel::table! {
 diesel::table! {
     expenses (id) {
         id -> Int4,
-        data_despesa -> Date,
+        data_emissao -> Nullable<Date>,
         fornecedor -> Varchar,
         valor_liquido -> Float4,
         url_documento -> Nullable<Varchar>,

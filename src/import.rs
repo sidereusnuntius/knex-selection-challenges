@@ -1,5 +1,6 @@
 use std::io;
 use std::collections::HashMap;
+use std::str::FromStr;
 
 use anyhow::Error;
 use anyhow::{bail, Context};
@@ -74,9 +75,15 @@ where
         let expense: ExpenseFromCsv = record
             .deserialize(Some(&headers))
             .with_context(|| "failed to deserialize expense.")?;
+    
+        let date_expense = if let Some(data_emissao) = expense.data_emissao {
+            NaiveDate::parse_from_str(&data_emissao, "%Y-%m-%dT%T").with_context(|| "date parsing error")?
+        } else {
+            NaiveDate::from_ymd_opt(expense.ano, expense.mes, 1).unwrap()
+        };
 
         expenses.push(NewExpense {
-            data_despesa: NaiveDate::from_ymd_opt(expense.ano, expense.mes, 1).unwrap(),
+            data_emissao: date_expense,
             deputado_id: current_id,
             fornecedor: expense.fornecedor,
             valor_liquido: expense.valor_liquido,
@@ -134,10 +141,11 @@ mod tests {
 
     fn get_csv() -> &'static str {
         r#""txNomeParlamentar";"cpf";"ideCadastro";"nuCarteiraParlamentar";"nuLegislatura";"sgUF";"sgPartido";"codLegislatura";"numSubCota";"txtDescricao";"numEspecificacaoSubCota";"txtDescricaoEspecificacao";"txtFornecedor";"txtCNPJCPF";"txtNumero";"indTipoDocumento";"datEmissao";"vlrDocumento";"vlrGlosa";"vlrLiquido";"numMes";"numAno";"numParcela";"txtPassageiro";"txtTrecho";"numLote";"numRessarcimento";"datPagamentoRestituicao";"vlrRestituicao";"nuDeputadoId";"ideDocumento";"urlDocumento"
-        Ninguém;"";"";"";"2023";"NA";"";"57";"1";"Descrição";"0";"";"Fornecedor";"CNPJ-fornecedor";"1984";"0";"2025-02-07T00:00:00";"1467";"0";"1467";"1";"2025";"0";"";"";"0";"";"";"";"0";"0";"https://test.url/0000.pdf"
+        Ninguém;"";"";"";"2023";"NA";"";"57";"1";"Descrição";"0";"";"Fornecedor";"CNPJ-fornecedor";"1984";"0";2025-02-07T00:00:00;"1467";"0";"1467";"1";"2025";"0";"";"";"0";"";"";"";"0";"0";"https://test.url/0000.pdf"
         Jorge;22488012033;"";"";"2023";"PB";"";"57";"1";"Descrição";"0";"";"Fornecedor";"CNPJ-fornecedor";"1984";"0";"2025-02-07T00:00:00";"1467";"0";"1467";"2";"2025";"0";"";"";"0";"";"";"";"0";"0";"https://test.url/0001.pdf"
         Zé;71838787089;"";"";"2023";"RJ";"";"57";"1";"Descrição";"0";"";"Fornecedor";"CNPJ-fornecedor";"1984";"0";"2025-02-07T00:00:00";"1467";"0";"1467";"3";"2025";"0";"";"";"0";"";"";"";"0";"0";"https://test.url/0002.pdf"
-        Jorge;22488012033;"";"";"2023";"PB";"";"57";"1";"Descrição";"0";"";"Fornecedor";"CNPJ-fornecedor";"1984";"0";"2025-02-07T00:00:00";"1467";"0";"1467";"2";"2025";"0";"";"";"0";"";"";"";"0";"0";"https://test.url/0001.pdf""#
+        Jorge;22488012033;"";"";"2023";"PB";"";"57";"1";"Descrição";"0";"";"Fornecedor";"CNPJ-fornecedor";"1984";"0";2025-02-07T00:00:00;"1467";"0";"1467";"2";"2025";"0";"";"";"0";"";"";"";"0";"0";"https://test.url/0001.pdf"
+        Jorge;22488012033;"";"";"2023";"PB";"";"57";"1";"Descrição";"0";"";"Fornecedor";"CNPJ-fornecedor";"1984";"0";;"1467";"0";"1467";"2";"2025";"0";"";"";"0";"";"";"";"0";"0";"https://test.url/0001.pdf""#
     }
 
     use super::*;
@@ -157,7 +165,9 @@ mod tests {
         let connection = &mut get_connection();
         
         connection.test_transaction(|connection| {
-            assert!(process_csv(connection, get_csv().as_bytes()).is_ok());
+            let result = process_csv(connection, get_csv().as_bytes());
+            println!("{result:?}");
+            assert!(result.is_ok());
 
             assert_eq!(deputados
                 // .select(schema::deputados::id)
@@ -167,7 +177,7 @@ mod tests {
                 assert_eq!(expenses
                     // .select(schema::deputados::id)
                     .count()
-                    .get_result(connection), Ok(3));
+                    .get_result(connection), Ok(4));
 
             Ok::<(), Error>(())
         });

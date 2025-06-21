@@ -15,7 +15,6 @@ fn main() {
     let file = File::open(&file_name).unwrap();
 
     conn.transaction(|connection| {
-        process_csv(connection, file);
-        Ok::<(), Error>(())
+        process_csv(connection, file)
     });
 }

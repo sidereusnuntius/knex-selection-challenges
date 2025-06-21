@@ -1,17 +1,18 @@
 use std::io::Read;
 use std::{collections::HashMap, fs::File};
 
+use chrono::NaiveDate;
 use diesel::prelude::*;
 use diesel::result::{DatabaseErrorKind, Error};
 use diesel::PgConnection;
 
-use crate::models::Deputado;
+use crate::models::{Deputado, Expense, ExpenseFromCsv, NewExpense};
 use crate::models::NovoDeputado;
 
 mod models;
 mod schema;
 
-pub fn process_csv(connection: &mut PgConnection, file: File) {
+pub fn process_csv(connection: &mut PgConnection, file: File) -> Result<(), Error>{
     let mut cache: HashMap<String, i32> = HashMap::new();
     let mut rdr =
     csv::ReaderBuilder::new()
@@ -28,23 +29,37 @@ pub fn process_csv(connection: &mut PgConnection, file: File) {
 
         let dep_cpf = record.get(1).unwrap();
         
-        if cache.get(dep_cpf).is_none() {
-            
-            if let Ok(id) = get_id_by_cpf(connection, dep_cpf) {
+        let current_id = if let Some(id) = cache.get(dep_cpf) {
+            *id
+        } else if let Ok(id) = get_id_by_cpf(connection, dep_cpf) {
                 cache.insert(dep_cpf.to_string(), id);
                 println!("CPF {dep_cpf} has already been registered with id {id}.");
-                continue;
-            };
-            
+                id
+        } else {
             let r: NovoDeputado = record.deserialize(Some(&headers)).unwrap();
 
             let result = insert_deputado(connection, r).unwrap();
             
             cache.insert(result.cpf.clone(), result.id);
             println!("Registered: {:?}.", result);
+            result.id
+        };
 
-        }
+        let expense: ExpenseFromCsv = record.deserialize(Some(&headers)).unwrap();
+        diesel::insert_into(schema::expenses::table)
+            .values(NewExpense {
+                data_despesa: NaiveDate::from_ymd_opt(expense.ano, expense.mes, 1).unwrap(),
+                deputado_id: current_id,
+                fornecedor: expense.fornecedor,
+                valor_liquido: expense.valor_liquido,
+                url_documento: expense.url_documento,
+            })
+            .returning(Expense::as_returning())
+            .get_result(connection)?;
+
+        // println!("Insert: {:?}", expense);
     }
+    Ok(())
 }
 
 fn get_id_by_cpf(connection: &mut PgConnection, cpf: &str) -> Result<i32, Error> {

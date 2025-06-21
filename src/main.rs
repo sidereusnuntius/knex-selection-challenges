@@ -1,8 +1,8 @@
 use std::fs::File;
 
-use diesel::{prelude::*, result::Error};
+use diesel::prelude::*;
 use dotenvy::dotenv;
-use knex_selection_challenges::process_csv;
+use knex_selection_challenges::import::process_csv;
 use std::env;
 
 fn main() {

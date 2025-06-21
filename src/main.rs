@@ -14,7 +14,10 @@ fn main() {
         .unwrap();
     let file = File::open(&file_name).unwrap();
 
-    conn.transaction(|connection| {
+    match conn.transaction(|connection| {
         process_csv(connection, file)
-    });
+    }) {
+        Ok(_) => println!("Insert succeeded!"),
+        Err(e) => println!("Error: {e:?}"),
+    };
 }

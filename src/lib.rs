@@ -23,6 +23,8 @@ pub fn process_csv(connection: &mut PgConnection, file: File) -> Result<(), Erro
 
     let headers = rdr.headers().unwrap().clone();
 
+    let mut expenses = Vec::new();
+
     for record in rdr.records() {
         let record = record.unwrap();
         if record.get(5).unwrap() == "NA" { continue; }
@@ -46,18 +48,27 @@ pub fn process_csv(connection: &mut PgConnection, file: File) -> Result<(), Erro
         };
 
         let expense: ExpenseFromCsv = record.deserialize(Some(&headers)).unwrap();
-        diesel::insert_into(schema::expenses::table)
-            .values(NewExpense {
-                data_despesa: NaiveDate::from_ymd_opt(expense.ano, expense.mes, 1).unwrap(),
-                deputado_id: current_id,
-                fornecedor: expense.fornecedor,
-                valor_liquido: expense.valor_liquido,
-                url_documento: expense.url_documento,
-            })
-            .returning(Expense::as_returning())
-            .get_result(connection)?;
-
+        expenses.push(NewExpense {
+            data_despesa: NaiveDate::from_ymd_opt(expense.ano, expense.mes, 1).unwrap(),
+            deputado_id: current_id,
+            fornecedor: expense.fornecedor,
+            valor_liquido: expense.valor_liquido,
+            url_documento: expense.url_documento,
+        });
         // println!("Insert: {:?}", expense);
+        if expenses.len() == 2000 {
+            diesel::insert_into(schema::expenses::table)
+            .values(&expenses)
+            // .returning(Expense::as_returning())
+            .execute(connection)?;
+        expenses.clear();
+        }
+    }
+    if expenses.len() > 0 {
+        diesel::insert_into(schema::expenses::table)
+                .values(&expenses)
+                // .returning(Expense::as_returning())
+                .execute(connection)?;
     }
     Ok(())
 }

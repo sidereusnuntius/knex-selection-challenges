@@ -1,7 +1,7 @@
 use std::{io, process::exit};
 
 use actix_web::{web, App, HttpServer};
-use knex_selection_challenges::{build_connection_pool, routes::import_csv};
+use knex_selection_challenges::{build_connection_pool, routes::{import_csv, lista_deputados_por_uf}};
 
 #[actix_web::main]
 async fn main() -> io::Result<()>{
@@ -21,7 +21,8 @@ async fn main() -> io::Result<()>{
     HttpServer::new(move || {
         App::new()
         .service(import_csv)
-            .app_data(web::Data::new(pool.clone()))
+        .service(lista_deputados_por_uf)
+        .app_data(web::Data::new(pool.clone()))
     })
     .bind(("127.0.0.1", 8080))?
     .run()

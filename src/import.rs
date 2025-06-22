@@ -7,8 +7,7 @@ use chrono::NaiveDate;
 use diesel::prelude::*;
 use diesel::PgConnection;
 
-use crate::models::{Deputado, ExpenseFromCsv, NewExpense};
-use crate::models::NovoDeputado;
+use crate::models::*;
 use crate::schema;
 use crate::validate::valida_cpf;
 
@@ -75,7 +74,7 @@ where
             .deserialize(Some(&headers))
             .with_context(|| "failed to deserialize expense.")?;
     
-        let date_expense = if let Some(data_emissao) = expense.data_emissao {
+        let date_expense = if let Some(data_emissao) = &expense.data_emissao {
             NaiveDate::parse_from_str(&data_emissao, "%Y-%m-%dT%T").with_context(|| "date parsing error")?
         } else {
             NaiveDate::from_ymd_opt(expense.ano, expense.mes, 1).unwrap()

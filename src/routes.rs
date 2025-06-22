@@ -1,10 +1,41 @@
 use actix_multipart::{Field, Multipart};
-use actix_web::{error::{ErrorBadRequest, ErrorInternalServerError}, post, web, HttpResponse};
+use actix_web::{error::{ErrorBadRequest, ErrorInternalServerError}, get, http::header::ContentType, post, web, HttpResponse};
+use anyhow::Context;
 use diesel::{r2d2::ConnectionManager, Connection, PgConnection};
 use futures_util::StreamExt;
 use r2d2::Pool;
+use serde::Deserialize;
 
-use crate::import::process_csv;
+use crate::{import::process_csv, models::Deputado};
+
+#[derive(Deserialize)]
+struct QueryArgs {
+    uf: String,
+}
+
+#[get("/deputados")]
+pub async fn lista_deputados_por_uf(
+    args: web::Query<QueryArgs>,
+    pool: web::Data<Pool<ConnectionManager<PgConnection>>>) -> Result<HttpResponse, actix_web::Error> {
+        let uf = args.uf.trim().to_uppercase();
+        if args.uf.len() != 2 {
+            return Err(ErrorBadRequest("UF inválida."));
+        }
+        let result = web::block(move || {
+            let mut connection = pool
+                .get()
+                .with_context(|| "database error")?;
+
+                Deputado::get_all_by_uf(&mut connection, &uf).with_context(|| "database error")
+        }).await?.map_err(ErrorInternalServerError)?;
+
+
+        Ok(
+            HttpResponse::Ok()
+            .content_type(ContentType::json())
+            .body(serde_json::to_string(&result)?)
+        )
+}
 
 #[post("/processar-ceap")]
 pub async fn import_csv(

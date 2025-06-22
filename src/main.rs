@@ -1,7 +1,7 @@
 use std::{io, process::exit};
 
 use actix_web::{web, App, HttpServer};
-use knex_selection_challenges::{build_connection_pool, import_csv};
+use knex_selection_challenges::{build_connection_pool, routes::import_csv};
 
 #[actix_web::main]
 async fn main() -> io::Result<()>{

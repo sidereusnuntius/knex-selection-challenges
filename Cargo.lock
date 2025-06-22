@@ -107,6 +107,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "actix-multipart-test"
+version = "0.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d622d3b8268b9c3d6788351eae9f028c29ba1151f4943aba4e5b794f475b445d"
+dependencies = [
+ "uuid",
+]
+
+[[package]]
 name = "actix-router"
 version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1020,6 +1029,7 @@ name = "knex-selection-challenges"
 version = "0.1.0"
 dependencies = [
  "actix-multipart",
+ "actix-multipart-test",
  "actix-web",
  "anyhow",
  "chrono",
@@ -1031,7 +1041,6 @@ dependencies = [
  "futures-util",
  "r2d2",
  "serde",
- "tokio",
 ]
 
 [[package]]
@@ -1725,6 +1734,17 @@ name = "utf8_iter"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b6c140620e7ffbb22c2dee59cafe6084a59b5ffc27a8859a5f0d494b5d52b6be"
+
+[[package]]
+name = "uuid"
+version = "1.17.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3cf4199d1e5d15ddd86a694e4d0dffa9c323ce759fea589f00fef9d81cc1931d"
+dependencies = [
+ "getrandom 0.3.3",
+ "js-sys",
+ "wasm-bindgen",
+]
 
 [[package]]
 name = "vcpkg"

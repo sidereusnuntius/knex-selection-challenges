@@ -108,7 +108,7 @@ where
     Ok(())
 }
 
-fn get_id_by_cpf(connection: &mut PgConnection, cpf: &str) -> Result<i32, Error> {
+pub fn get_id_by_cpf(connection: &mut PgConnection, cpf: &str) -> Result<i32, Error> {
     use self::schema::deputados::dsl::deputados;
 
     Ok(

@@ -13,7 +13,7 @@ anyhow = "1.0.98"
 actix-web = "4"
 r2d2 = "0.8.10"
 actix-multipart = "0.7.2"
-tokio = "1.45.1"
 futures-core = "0.3.31"
 futures-util = "0.3.31"
 derive_more = { version = "2.0.1", features = ["display"] }
+actix-multipart-test = "0.0.3"

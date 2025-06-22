@@ -1,23 +1,29 @@
-use std::fs::File;
+use std::{io, process::exit};
 
-use diesel::prelude::*;
-use dotenvy::dotenv;
-use knex_selection_challenges::import::process_csv;
-use std::env;
+use actix_web::{web, App, HttpServer};
+use knex_selection_challenges::{build_connection_pool, import_csv};
 
-fn main() {
-    dotenv().ok();
+#[actix_web::main]
+async fn main() -> io::Result<()>{
 
-    let db_url = env::var("DATABASE_URL").unwrap();
-    let file_name = env::var("FILE").unwrap();
-    let conn = &mut PgConnection::establish(&db_url)
-        .unwrap();
-    let file = File::open(&file_name).unwrap();
-
-    match conn.transaction(|connection| {
-        process_csv(connection, file)
-    }) {
-        Ok(_) => println!("Insert succeeded!"),
-        Err(e) => println!("Error: {e:?}"),
+    let pool = match build_connection_pool() {
+        Ok(pool) => pool,
+        Err(e) => {
+            eprintln!("{e:?}");
+            exit(1);
+        },
     };
+    
+    // let file_name = env::var("FILE").unwrap();
+
+    // let file = File::open(&file_name).unwrap();
+
+    HttpServer::new(move || {
+        App::new()
+        .service(import_csv)
+            .app_data(web::Data::new(pool.clone()))
+    })
+    .bind(("127.0.0.1", 8080))?
+    .run()
+    .await
 }

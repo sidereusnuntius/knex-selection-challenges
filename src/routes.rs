@@ -89,11 +89,11 @@ mod tests {
 
     fn get_csv() -> &'static str {
         "txNomeParlamentar;cpf;ideCadastro;nuCarteiraParlamentar;nuLegislatura;sgUF;sgPartido;codLegislatura;numSubCota;txtDescricao;numEspecificacaoSubCota;txtDescricaoEspecificacao;txtFornecedor;txtCNPJCPF;txtNumero;indTipoDocumento;datEmissao;vlrDocumento;vlrGlosa;vlrLiquido;numMes;numAno;numParcela;txtPassageiro;txtTrecho;numLote;numRessarcimento;datPagamentoRestituicao;vlrRestituicao;nuDeputadoId;ideDocumento;urlDocumento
-    Ninguém;;;;2023;NA;;57;1;Descrição;0;;Fornecedor;CNPJ-fornecedor;1984;0;2025-02-07T00:00:00;1467;0;1467;1;2025;0;;;0;;;;0;0;https://test.url/0000.pdf
-    Jorge;22488012033;;;2023;PB;;57;1;Descrição;0;;Fornecedor;CNPJ-fornecedor;1984;0;2025-02-07T00:00:00;1467;0;1467;2;2025;0;;;0;;;;0;0;https://test.url/0001.pdf
-    Zé;71838787089;;;2023;RJ;;57;1;Descrição;0;;Fornecedor;CNPJ-fornecedor;1984;0;2025-02-07T00:00:00;1467;0;1467;3;2025;0;;;0;;;;0;0;https://test.url/0002.pdf
-    Jorge;22488012033;;;2023;PB;;57;1;Descrição;0;;Fornecedor;CNPJ-fornecedor;1984;0;2025-02-07T00:00:00;1467;0;1467;2;2025;0;;;0;;;;0;0;https://test.url/0001.pdf
-        Jorge;22488012033;;;2023;PB;;57;1;Descrição;0;;Fornecedor;CNPJ-fornecedor;1984;0;;1467;0;1467;2;2025;0;;;0;;;;0;0;https://test.url/0001.pdf"
+Ninguém;;;;2023;NA;;57;1;Descrição;0;;Fornecedor;CNPJ-fornecedor;1984;0;2025-02-07T00:00:00;1467;0;1467;1;2025;0;;;0;;;;0;0;https://test.url/0000.pdf
+Jorge;22488012033;;;2023;PB;;57;1;Descrição;0;;Fornecedor;CNPJ-fornecedor;1984;0;2025-02-07T00:00:00;1467;0;1467;2;2025;0;;;0;;;;0;0;https://test.url/0001.pdf
+Zé;71838787089;;;2023;RJ;;57;1;Descrição;0;;Fornecedor;CNPJ-fornecedor;1984;0;2025-02-07T00:00:00;1467;0;1467;3;2025;0;;;0;;;;0;0;https://test.url/0002.pdf
+Jorge;22488012033;;;2023;PB;;57;1;Descrição;0;;Fornecedor;CNPJ-fornecedor;1984;0;2025-02-07T00:00:00;1467;0;1467;2;2025;0;;;0;;;;0;0;https://test.url/0001.pdf
+Jorge;22488012033;;;2023;PB;;57;1;Descrição;0;;Fornecedor;CNPJ-fornecedor;1984;0;;1467;0;1467;2;2025;0;;;0;;;;0;0;https://test.url/0001.pdf"
     }
 
     #[actix_web::test]
@@ -161,8 +161,6 @@ mod tests {
 
     #[actix_web::test]
     async fn process_request_without_payload() {
-        use crate::schema::deputados::dsl::deputados;
-
         let pool = build_test_connection_pool().unwrap();
         let app = test::init_service(
             App::new()
@@ -170,37 +168,14 @@ mod tests {
                 .app_data(web::Data::new(pool.clone()))
         ).await;
 
-        let (header, payload): ((String, String), Vec<u8>) = MultiPartFormDataBuilder::new().with_text("file", get_csv()).build();
-
         let req =
             test::TestRequest::post()
             .uri("/processar-ceap")
-            .insert_header(header)
-            .set_payload(payload)
             .to_request();
 
         let response = test::call_service(&app, req).await;
         
-        assert!(response.status().is_success());
-        
-        let mut connection = pool.get().unwrap();
-
-        let dep1 = deputados
-            .filter(schema::deputados::cpf.eq("22488012033"))
-            .select(Deputado::as_select())
-            .first(&mut connection)
-            .unwrap();
-
-        let dep2 = deputados
-            .filter(schema::deputados::cpf.eq("71838787089"))
-            .select(Deputado::as_select())
-            .first(&mut connection)
-            .unwrap();
-
-        assert_eq!(dep1.cpf, "22488012033");
-        assert_eq!(dep2.cpf, "71838787089");
-        assert_eq!(dep1.nome, "Jorge");
-        assert_eq!(dep2.nome, "Zé");
+        assert!(response.status().is_client_error());
     }
 
 }

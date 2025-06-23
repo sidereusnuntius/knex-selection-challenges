@@ -2,7 +2,7 @@ use chrono::NaiveDateTime;
 use diesel::{prelude::*, result::Error};
 use serde::{Deserialize, Serialize};
 
-use crate::{models::deputado::Deputado, schema::{deputados, expenses}};
+use crate::{models::deputado::Deputado, schema::expenses};
 
 #[derive(Queryable, Selectable, Identifiable, Associations, Debug, PartialEq)]
 #[diesel(belongs_to(Deputado))]
@@ -70,12 +70,16 @@ pub struct DespesaComDeputado {
 }
 
 impl Expense {
-    pub fn get_expenses_by_cpf(connection: &mut PgConnection, cpf_busca: &str) -> Result<Vec<DespesaComDeputado>, Error> {
+    pub fn get_expenses_by_cpf(connection: &mut PgConnection, cpf_busca: &str, mut page: u32) -> Result<Vec<DespesaComDeputado>, Error> {
         use self::despesa_com_deputado::dsl::*;
+        if page == 0 { page = 1; }
+
         Ok(
             despesa_com_deputado
             .filter(cpf.eq(cpf_busca))
             .select(DespesaComDeputado::as_select())
+            .limit(20)
+            .offset(20 * (page as i64 - 1))
             .load(connection)?
         )
     }

@@ -18,18 +18,23 @@ struct PageArgs {
     page: Option<u32>,
 }
 
-#[get("/deputados/{cpf}/despesas")]
+#[get("/despesas/cpf/{cpf}")]
 pub async fn lista_despesas_por_cpf(
     cpf: web::Path<String>,
     page: web::Query<PageArgs>,
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>) -> Result<HttpResponse, actix_web::Error> {
         let cpf = cpf.into_inner();
+        let page = if let Some(page) = page.page {
+            page
+        } else {
+            1
+        };
 
         let result = web::block(move || {
             let connection = &mut pool.get().with_context(|| "database error")?;
 
             Ok(
-                Expense::get_expenses_by_cpf(connection, &cpf).with_context(|| "database error")?
+                Expense::get_expenses_by_cpf(connection, &cpf, page).with_context(|| "database error")?
             )
         })
         .await?

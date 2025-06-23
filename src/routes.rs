@@ -4,7 +4,7 @@ use anyhow::Context;
 use diesel::{r2d2::ConnectionManager, Connection, PgConnection};
 use futures_util::StreamExt;
 use r2d2::Pool;
-use serde::Deserialize;
+use serde::{Serialize, Deserialize};
 
 use crate::{import::process_csv, models::{Deputado, Expense}};
 
@@ -16,6 +16,36 @@ struct QueryArgs {
 #[derive(Deserialize)]
 struct PageArgs {
     page: Option<u32>,
+}
+
+#[derive(Serialize)]
+struct SumResult {
+    soma: f32,
+}
+
+#[get("/despesas/cpf/{cpf}/soma")]
+pub async fn soma_despesas(
+    cpf: web::Path<String>,
+    pool: web::Data<Pool<ConnectionManager<PgConnection>>>) -> Result<HttpResponse, actix_web::Error> {
+        let cpf = cpf.into_inner();
+
+        let result = web::block(move || {
+            let connection = &mut pool.get().with_context(|| "database error")?;
+
+            Ok(
+                Expense::sum_all(connection, &cpf)?
+            )
+        })
+        .await?
+        .map_err(ErrorInternalServerError::<anyhow::Error>)?;
+
+        Ok(
+            HttpResponse::Ok()
+            .content_type(ContentType::json())
+            .body(serde_json::to_string(
+                &SumResult { soma: result }
+            )?)
+        )
 }
 
 #[get("/despesas/cpf/{cpf}")]

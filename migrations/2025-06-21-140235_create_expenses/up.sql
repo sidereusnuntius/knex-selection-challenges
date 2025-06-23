@@ -1,6 +1,6 @@
 CREATE TABLE expenses (
     id SERIAL PRIMARY KEY,
-    data_emissao DATE,
+    data_emissao TIMESTAMP,
     fornecedor VARCHAR NOT NULL,
     valor_liquido REAL NOT NULL,
     url_documento VARCHAR,

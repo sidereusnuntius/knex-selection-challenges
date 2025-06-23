@@ -6,11 +6,40 @@ use futures_util::StreamExt;
 use r2d2::Pool;
 use serde::Deserialize;
 
-use crate::{import::process_csv, models::Deputado};
+use crate::{import::process_csv, models::{Deputado, Expense}};
 
 #[derive(Deserialize)]
 struct QueryArgs {
     uf: String,
+}
+
+#[derive(Deserialize)]
+struct PageArgs {
+    page: Option<u32>,
+}
+
+#[get("/deputados/{cpf}/despesas")]
+pub async fn lista_despesas_por_cpf(
+    cpf: web::Path<String>,
+    page: web::Query<PageArgs>,
+    pool: web::Data<Pool<ConnectionManager<PgConnection>>>) -> Result<HttpResponse, actix_web::Error> {
+        let cpf = cpf.into_inner();
+
+        let result = web::block(move || {
+            let connection = &mut pool.get().with_context(|| "database error")?;
+
+            Ok(
+                Expense::get_expenses_by_cpf(connection, &cpf).with_context(|| "database error")?
+            )
+        })
+        .await?
+        .map_err(ErrorInternalServerError::<anyhow::Error>)?;
+
+        Ok(
+            HttpResponse::Ok()
+            .content_type(ContentType::json())
+            .body(serde_json::to_string(&result)?)
+        )
 }
 
 #[get("/deputados")]
@@ -27,7 +56,9 @@ pub async fn lista_deputados_por_uf(
                 .with_context(|| "database error")?;
 
                 Deputado::get_all_by_uf(&mut connection, &uf).with_context(|| "database error")
-        }).await?.map_err(ErrorInternalServerError)?;
+        })
+        .await?
+        .map_err(ErrorInternalServerError)?;
 
 
         Ok(

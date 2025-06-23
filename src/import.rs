@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use anyhow::Error;
 use anyhow::{bail, Context};
-use chrono::NaiveDate;
+use chrono::{NaiveTime, NaiveDate, NaiveDateTime};
 use diesel::prelude::*;
 use diesel::PgConnection;
 
@@ -75,9 +75,11 @@ where
             .with_context(|| "failed to deserialize expense.")?;
     
         let date_expense = if let Some(data_emissao) = &expense.data_emissao {
-            NaiveDate::parse_from_str(&data_emissao, "%Y-%m-%dT%T").with_context(|| "date parsing error")?
+            NaiveDateTime::parse_from_str(&data_emissao, "%Y-%m-%dT%T").with_context(|| "date parsing error")?
         } else {
-            NaiveDate::from_ymd_opt(expense.ano, expense.mes, 1).unwrap()
+            NaiveDate::from_ymd_opt(expense.ano, expense.mes, 1)
+            .with_context(|| "could not parse emission date")?
+            .and_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap())
         };
 
         expenses.push(NewExpense {

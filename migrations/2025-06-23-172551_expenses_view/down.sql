@@ -1,0 +1,1 @@
+DROP VIEW despesa_com_deputado

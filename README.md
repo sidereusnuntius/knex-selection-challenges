@@ -4,6 +4,8 @@
 
 ## Com Docker
 
+Para fazer o Actix e o Diesel funcionarem no Docker, eu me baseei nos seguintes exemplos: [[1]](https://medium.com/@aniketsuryawanshixz1/building-a-rust-api-with-actix-web-diesel-postgres-and-docker-09b0958552aa) e [[2]](https://www.codefeetime.com/post/docker-config-for-actix-web-diesel-and-postgres/).
+
 ```
 docker compose up -d db
 docker compose run --rm app diesel setup

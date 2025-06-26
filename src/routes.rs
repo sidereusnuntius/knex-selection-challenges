@@ -28,6 +28,34 @@ struct SumResult {
     soma: f32,
 }
 
+#[derive(Serialize)]
+struct SumResultF64 {
+    soma: f64,
+}
+
+// Retorna a soma de todas as despesas.
+#[get("/despesas/soma")]
+pub async fn soma_todas_as_despesas(
+    pool: web::Data<Pool<ConnectionManager<PgConnection>>>) -> Result<HttpResponse, actix_web::Error> {
+        let result = web::block(move || {
+            let connection = &mut pool.get().with_context(|| "database error")?;
+
+            Ok(
+                Expense::sum_all(connection)?
+            )
+        })
+        .await?
+        .map_err(ErrorInternalServerError::<anyhow::Error>)?;
+
+        Ok(
+            HttpResponse::Ok()
+            .content_type(ContentType::json())
+            .body(serde_json::to_string(
+                &SumResult { soma: result }
+            )?)
+        )
+}
+
 // Retorna a soma das despesas do deputado com um dado CPF. 
 #[get("/despesas/cpf/{cpf}/soma")]
 pub async fn soma_despesas(
@@ -39,7 +67,7 @@ pub async fn soma_despesas(
             let connection = &mut pool.get().with_context(|| "database error")?;
 
             Ok(
-                Expense::sum_all(connection, &cpf)?
+                Expense::sum_all_by_cpf(connection, &cpf)?
             )
         })
         .await?

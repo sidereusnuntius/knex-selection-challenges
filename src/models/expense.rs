@@ -115,12 +115,27 @@ impl Expense {
         )
     }
 
-    pub fn sum_all(connection: &mut PgConnection, cpf_busca: &str) -> Result<f32, Error> {
+    pub fn sum_all_by_cpf(connection: &mut PgConnection, cpf_busca: &str) -> Result<f32, Error> {
         use self::despesa_com_deputado::dsl::*;
 
         let result: Option<f32> = 
             despesa_com_deputado
             .filter(cpf.eq(cpf_busca))
+            .select(sum(valor_liquido))
+            .first(connection)?;
+
+        if let Some(s) = result {
+            Ok(s)
+        } else {
+            Err(Error::NotFound)
+        }
+    }
+
+    pub fn sum_all(connection: &mut PgConnection) -> Result<f32, Error> {
+        use crate::schema::expenses::dsl::*;
+
+        let result: Option<f32> = 
+            expenses
             .select(sum(valor_liquido))
             .first(connection)?;
 

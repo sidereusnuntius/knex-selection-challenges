@@ -5,7 +5,7 @@ use knex_selection_challenges::{build_connection_pool, routes::{import_csv, list
 
 #[actix_web::main]
 async fn main() -> io::Result<()>{
-
+    colog::init();
     let pool = match build_connection_pool() {
         Ok(pool) => pool,
         Err(e) => {
@@ -26,7 +26,7 @@ async fn main() -> io::Result<()>{
         .service(soma_despesas)
         .app_data(web::Data::new(pool.clone()))
     })
-    .bind(("127.0.0.1", 8080))?
+    .bind(("0.0.0.0", 8080))?
     .run()
     .await
 }

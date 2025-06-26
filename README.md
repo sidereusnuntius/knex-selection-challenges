@@ -1,24 +1,34 @@
-# Desafios Técnicos - Processo Seletivo Knex Consultoria
+# Desafio
 
-Bem-vindo(a) ao processo seletivo da Knex Empresa Júnior de Computação! Este repositório contém os desafios técnicos que fazem parte do nosso processo de seleção.
+# Executando o projeto
 
-## Estrutura
-- `/frontend`: Contém os desafios relacionados a desenvolvimento frontend;
-- `/backend`: Contém os desafios de desenvolvimento backend;
-- `/ui`: Contém os desafios de prototipação focando em UI/UX (em breve...)
-- `/docs`: Documentação adicional sobre o processo (em breve...)
+## Com Docker
 
+Para fazer o Actix e o Diesel funcionarem no Docker, eu me baseei nos seguintes exemplos: [[1]](https://medium.com/@aniketsuryawanshixz1/building-a-rust-api-with-actix-web-diesel-postgres-and-docker-09b0958552aa) e [[2]](https://www.codefeetime.com/post/docker-config-for-actix-web-diesel-and-postgres/).
 
-## Como Participar
-1. Faça um fork deste repositório
-2. Leia atentamente as instruções em cada pasta
-3. Complete os desafios seguindo as diretrizes fornecidas
+```
+docker compose up -d db
+docker compose run --rm app diesel setup
+docker compose run --rm app diesel migration run
+docker compose up app
+```
 
-## Prazo
-O prazo para submissão está especificado no edital do processo seletivo vigente.
+## Sem Docker
 
-## Dúvidas
-Em caso de dúvidas, entre em contato através do email (org.knex@gmail.com) fornecido no início do processo seletivo.
+### Requisitos
+* [Rust e Cargo](https://www.rust-lang.org/tools/install)
+* [Postgres](https://www.postgresql.org/download/)
+* [Diesel CLI](http://diesel.rs/guides/getting-started.html)
 
-## Avaliação
-Você receberá feedback e orientações adicionais através do contato fornecido via (email/WhatsApp).
+### Execução
+1. Crie no .env uma variável chamada DATABASE_URL contendo a URL de acesso ao banco de dados.
+2. Use o Diesel CLI para criar o banco de dados e executar as migrações.
+   ```
+   diesel setup
+   diesel migration run
+   ```
+3. Você pode compilar o projeto, ou executá-lo diretamente com o seguinte comando:
+   ```
+   cargo run --release
+   ```
+Para executar os testes, use ```cargo test```. Para a documentação, ```cargo doc --no-deps --open```.

@@ -29,6 +29,8 @@ where
         .clone();
 
     let mut expenses = Vec::new();
+    
+    let mut num_despesas: u64 = 0;
 
     for record in rdr.records() {
         let record = match record {
@@ -56,7 +58,7 @@ where
             *id
         } else if let Ok(id) = get_id_by_cpf(connection, dep_cpf) {
                 cache.insert(dep_cpf.to_string(), id);
-                println!("CPF {dep_cpf} has already been registered with id {id}.");
+                // println!("CPF {dep_cpf} has already been registered with id {id}.");
                 id
         } else {
             let r: NovoDeputado = record
@@ -66,7 +68,7 @@ where
             let result = insert_deputado(connection, r)?;
             
             cache.insert(result.cpf.clone(), result.id);
-            println!("Registered: {:?}.", result);
+            // println!("Registered: {:?}.", result);
             result.id
         };
 
@@ -89,6 +91,7 @@ where
             valor_liquido: expense.valor_liquido,
             url_documento: expense.url_documento,
         });
+        num_despesas += 1;
         // println!("Insert: {:?}", expense);
         if expenses.len() == 10000 {
             diesel::insert_into(schema::expenses::table)
@@ -106,6 +109,7 @@ where
                 .execute(connection)
                 .with_context(|| "batch insertion failed.")?;
     }
+    log::info!("Registrados {} deputados e {} despesas.", cache.len(), num_despesas);
     Ok(())
 }
 

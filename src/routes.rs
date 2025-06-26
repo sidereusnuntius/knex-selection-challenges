@@ -8,21 +8,27 @@ use serde::{Serialize, Deserialize};
 
 use crate::{import::process_csv, models::{Deputado, Expense}};
 
+// Representa um argumento contendo uma Unidade Federativa, usado na consulta a deputados por UF.
 #[derive(Deserialize)]
 struct QueryArgs {
     uf: String,
 }
 
+// Representa um argumento opcional contendo a página; utilizado nos endpoints que retornam um
+// grande volume de dados e usam paginação para reduzir o consumo de memória e de largura de banda.
 #[derive(Deserialize)]
 struct PageArgs {
     page: Option<u32>,
 }
 
+// Representa a soma das despesas; existe apenas para ser serializado em JSON nos corpos das
+// respostas.
 #[derive(Serialize)]
 struct SumResult {
     soma: f32,
 }
 
+// Retorna a soma das despesas do deputado com um dado CPF. 
 #[get("/despesas/cpf/{cpf}/soma")]
 pub async fn soma_despesas(
     cpf: web::Path<String>,
@@ -48,6 +54,37 @@ pub async fn soma_despesas(
         )
 }
 
+// Retorna a lista das despesas de uma determinada unidade federativa.
+#[get("/despesas/uf/{uf}")]
+pub async fn lista_despesas_por_uf(
+    uf: web::Path<String>,
+    page: web::Query<PageArgs>,
+    pool: web::Data<Pool<ConnectionManager<PgConnection>>>) -> Result<HttpResponse, actix_web::Error> {
+        let uf = uf.into_inner().trim().to_uppercase();
+        let page = if let Some(page) = page.page {
+            page
+        } else {
+            1
+        };
+
+        let result = web::block(move || {
+            let connection = &mut pool.get().with_context(|| "database error")?;
+
+            Ok(
+                Expense::get_expenses_by_uf(connection, &uf, page).with_context(|| "database error")?
+            )
+        })
+        .await?
+        .map_err(ErrorInternalServerError::<anyhow::Error>)?;
+
+        Ok(
+            HttpResponse::Ok()
+            .content_type(ContentType::json())
+            .body(serde_json::to_string(&result)?)
+        )
+}
+
+// Retorna a lista das despesas do deputado com um dado CPF.
 #[get("/despesas/cpf/{cpf}")]
 pub async fn lista_despesas_por_cpf(
     cpf: web::Path<String>,
@@ -77,6 +114,8 @@ pub async fn lista_despesas_por_cpf(
         )
 }
 
+// Lista os deputados de uma determinada unidade federativa; esta é informada através de um
+// parâmetro de URL.
 #[get("/deputados")]
 pub async fn lista_deputados_por_uf(
     args: web::Query<QueryArgs>,
@@ -103,6 +142,8 @@ pub async fn lista_deputados_por_uf(
         )
 }
 
+// Processa um CSV contendo as despesas dos deputados; aceita o arquivo como um Multipart, e, caso
+// haja múltiplos arquivos, considera apenas o primeiro.
 #[post("/processar-ceap")]
 pub async fn import_csv(
     mut payload: Multipart,
@@ -134,6 +175,7 @@ pub async fn import_csv(
     Ok(HttpResponse::Ok().body("File saved successfully"))
 }
 
+// Processa o Multipart contido no corpo de uma requisição
 async fn process_multipart(mut field: Field) -> Result<Vec<u8>, actix_web::Error> {
     let mut bytes: Vec<u8> = Vec::new();
 

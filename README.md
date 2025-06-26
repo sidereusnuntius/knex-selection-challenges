@@ -1,4 +1,10 @@
-# Desafio
+# Endpoints
+
+* /despesas/cpf/{cpf}/soma: retorna a soma das despesas do deputado com o CPF dado.
+* /despesas/uf/{uf}: lista todas as despesas de uma unidade federativa. Possui um parâmetro opcional, page, que informa a página: /despesas/uf/{uf}?page=2.
+* /despesas/cpf/{cpf}: lista as despesas do deputado com o CPF informado. Possui um parâmetro opcional, page, que informa a página.
+* /deputados?uf={uf}lista deos deputados da unidade federativa dada.
+* /processar-ceap: processa o CSV enviado no corpo da requisição como um multipart.
 
 # Executando o projeto
 

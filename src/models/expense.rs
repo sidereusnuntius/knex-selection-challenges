@@ -51,7 +51,24 @@ diesel::table! {
         url_documento -> Nullable<Varchar>,
         nome -> Varchar,
         cpf -> Varchar,
+        #[max_length = 2]
+        uf -> Bpchar,
     }
+}
+
+#[derive(Debug, Queryable, Selectable, Serialize, Identifiable, Associations, PartialEq)]
+#[diesel(belongs_to(Expense))]
+#[diesel(primary_key(expense_id))]
+#[diesel(table_name = despesa_com_deputado)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct DespesaSemDeputado {
+    pub expense_id: i32,
+    pub data_emissao: Option<NaiveDateTime>,
+    pub fornecedor: String,
+    pub valor_liquido: f32,
+    pub url_documento: Option<String>,
+    // pub nome: String,
+    // pub cpf: String,
 }
 
 #[derive(Debug, Queryable, Selectable, Serialize, Identifiable, Associations, PartialEq)]
@@ -70,13 +87,27 @@ pub struct DespesaComDeputado {
 }
 
 impl Expense {
-    pub fn get_expenses_by_cpf(connection: &mut PgConnection, cpf_busca: &str, mut page: u32) -> Result<Vec<DespesaComDeputado>, Error> {
+    pub fn get_expenses_by_cpf(connection: &mut PgConnection, cpf_busca: &str, mut page: u32) -> Result<Vec<DespesaSemDeputado>, Error> {
         use self::despesa_com_deputado::dsl::*;
         if page == 0 { page = 1; }
 
         Ok(
             despesa_com_deputado
             .filter(cpf.eq(cpf_busca))
+            .select(DespesaSemDeputado::as_select())
+            .limit(20)
+            .offset(20 * (page as i64 - 1))
+            .load(connection)?
+        )
+    }
+
+    pub fn get_expenses_by_uf(connection: &mut PgConnection, uf_busca: &str, mut page: u32) -> Result<Vec<DespesaComDeputado>, Error> {
+        use self::despesa_com_deputado::dsl::*;
+        if page == 0 { page = 1; }
+
+        Ok(
+            despesa_com_deputado
+            .filter(uf.eq(uf_busca))
             .select(DespesaComDeputado::as_select())
             .limit(20)
             .offset(20 * (page as i64 - 1))

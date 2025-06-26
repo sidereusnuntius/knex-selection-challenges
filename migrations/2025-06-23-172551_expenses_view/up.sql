@@ -5,6 +5,7 @@ CREATE VIEW despesa_com_deputado AS
            expenses.valor_liquido,
            expenses.url_documento,
            deputados.nome,
-           deputados.cpf
+           deputados.cpf,
+           deputados.uf
     FROM expenses INNER JOIN deputados
     ON expenses.deputado_id = deputados.id;

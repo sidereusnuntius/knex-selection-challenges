@@ -28,11 +28,6 @@ struct SumResult {
     soma: f32,
 }
 
-#[derive(Serialize)]
-struct SumResultF64 {
-    soma: f64,
-}
-
 // Retorna a soma de todas as despesas.
 #[get("/despesas/soma")]
 pub async fn soma_todas_as_despesas(
